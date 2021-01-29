@@ -109,7 +109,7 @@ spec:
 #### Spec
 
 **Path**: `.spec`</br>
-**Description**: `spec` is required and **must** include allof `region`, `guid`, `collection_id`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `attributes` object is optional.
+**Description**: `spec` is required and **must** include allof `region`, `guid`, `collection_id`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `attributes` object is optional. <br/>
 **Schema**:
 ```yaml
         spec:
@@ -146,7 +146,7 @@ spec:
 
 ##### region
 **Path**: `.spec.region`</br>
-**Description**: Region is required to identify the region in which IBM Cloud App Configuration instance is provisioned.
+**Description**: Region is required to identify the region in which IBM Cloud App Configuration instance is provisioned.<br/>
 **Schema**:
 ```yaml
 region:
@@ -155,7 +155,7 @@ region:
 
 ##### collection_id
 **Path**: `.spec.apikey`</br>
-**Description**: Collection ID is required to identify the collection which groups the flag flag values required in the kubernetes cluster. The plugin is designed to work with one collection per cluster.
+**Description**: Collection ID is required to identify the collection which groups the flag flag values required in the kubernetes cluster. The plugin is designed to work with one collection per cluster. <br/>
 **Schema**:
 ```yaml
 apikey:
@@ -164,7 +164,7 @@ apikey:
 
 ##### guid
 **Path**: `.spec.guid`</br>
-**Description**: GUID is required to identify the IBM Cloud App Configuration instance.
+**Description**: GUID is required to identify the IBM Cloud App Configuration instance. <br/>
 **Schema**:
 ```yaml
 guid:
@@ -173,7 +173,7 @@ guid:
 
 ##### apikey
 **Path**: `.spec.apikey`</br>
-**Description**: apikey is required to authenticate the API calls made by the razee plugin to IBM Cloud App Configuration.=
+**Description**: apikey is required to authenticate the API calls made by the razee plugin to IBM Cloud App Configuration. <br/>
 **Schema**:
 ```yaml
 apikey:
@@ -207,7 +207,7 @@ apikey:
 
 ##### Attributes
 **Path**: `.spec.attributes`</br>
-**Description**: Attributes are **optional** client attributes used for targetting flag values to a segment of clusters/users.
+**Description**: Attributes are **optional** client attributes used for targetting flag values to a segment of clusters/users. <br>
 **Schema**:
 ```yaml
 attributes:
