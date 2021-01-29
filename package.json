@@ -1,0 +1,33 @@
+{
+  "name": "IBMCloudAppConfig",
+  "version": "1.0.0",
+  "description": "Razee: component to pull feature values into a kubernetes environment",
+  "main": "src/index.js",
+  "keywords": [
+    "kubernetes",
+    "razee",
+    "feature",
+    "flag",
+    "version",
+    "control",
+    "CD",
+    "rollout"
+  ],
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "repository": {
+  },
+  "contributors": [
+  ],
+  "dependencies": {
+    "@razee/kubernetes-util": "0.0.10",
+    "@razee/razeedeploy-core": "^0.8.2",
+    "ibm-appconfiguration-node-core": "^0.1.3",
+    "ibm-appconfiguration-node-feature": "^0.1.3",
+    "bunyan": "^1.8.12",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.0",
+    "object-path": "^0.11.4"
+  }
+}

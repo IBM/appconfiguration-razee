@@ -1,0 +1,157 @@
+apiVersion: v1
+kind: List
+metadata:
+  name: appconfigibm-controller-list
+type: array
+items:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: appconfigibm-controller
+      labels:
+        razee/watch-resource: "lite"
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: appconfigibm-controller
+      strategy:
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app: appconfigibm-controller
+            razee/watch-resource: "lite"
+          name: appconfigibm-controller
+        spec:
+          serviceAccountName: razeedeploy-sa
+          containers:
+            # For best practice, Use the tagged image
+            - image: icr.io/appconfiguration/apprapp-razee:latest
+              resources:
+                limits:
+                  memory: 200Mi
+                  cpu: 100m
+                requests:
+                  memory: 75Mi
+                  cpu: 40m
+              env:
+                - name: CRD_WATCH_TIMEOUT_SECONDS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: razeedeploy-overrides
+                      key: CRD_WATCH_TIMEOUT_SECONDS
+                      optional: true
+              imagePullPolicy: Always
+              name: appconfigibm-controller
+  - apiVersion: apiextensions.k8s.io/v1beta1
+    kind: CustomResourceDefinition
+    metadata:
+      # name must match the spec fields below, and be in the form: <plural>.<group>
+      name: ibmcloudappconfigs.deploy.razee.io
+    spec:
+      # group name to use for REST API: /apis/<group>/<version>
+      group: deploy.razee.io
+      # list of versions supported by this CustomResourceDefinition
+      versions:
+        - name: v1beta1
+          # Each version can be enabled/disabled by Served flag.
+          served: true
+          # One and only one version must be marked as the storage version.
+          storage: true
+          schema:
+          # openAPIV3Schema is the schema for validating custom objects.
+            openAPIV3Schema:
+              type: object
+              required: [spec]
+              properties:
+                spec:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                  allOf:
+                    - required: [region]
+                    - required: [collection_id]
+                    - required: [guid]
+                  # you must define oneOf:
+                  oneOf:
+                    - required: [apikey]
+                    - required: [apikeyRef]
+                  properties:
+                    region:
+                      type: string
+                    collection_id:
+                      type: string
+                    guid:
+                      type: string
+                    apikey:
+                      type: string
+                    apkeyRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [secretKeyRef]
+                          properties:
+                            secretKeyRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    attributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                data:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true                
+        - name: v1beta2
+          # Each version can be enabled/disabled by Served flag.
+          served: true
+          # One and only one version must be marked as the storage version.
+          storage: false
+          schema:
+            # openAPIV3Schema is the schema for validating custom objects.
+            openAPIV3Schema:
+              type: object
+              required: [spec]
+              properties:
+                spec:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                data:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true 
+      # either Namespaced or Cluster
+      scope: Namespaced
+      names:
+        # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+        plural: ibmcloudappconfigs
+        # singular name to be used as an alias on the CLI and for display
+        singular: ibmcloudappconfig
+        # kind is normally the CamelCased singular type. Your resource manifests use this.
+        kind: IBMCloudAppConfig
+        # shortNames allow shorter string to match your resource on the CLI
+        shortNames:
+          - icappconfig
+      subresources:
+        # status enables the status subresource
+        status: {}
+      # prune unknown fields
+      preserveUnknownFields: false
