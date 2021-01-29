@@ -182,7 +182,7 @@ apikey:
 
 ##### apikeyRef
 **Path**: `.spec.apikeyRef`</br>
-**Description**: apikeyRef is the recommended way to pass the apikey from kubernetes secrets.
+**Description**: apikeyRef is the recommended way to pass the apikey from kubernetes secrets. <br/>
 **Schema**:
 ```yaml
  apkeyRef:
