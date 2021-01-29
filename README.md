@@ -1,14 +1,19 @@
-- [IBMCloudAppConfig](#IBMCloudAppConfig)
+- [IBMCloudAppConfig](#ibmcloudappconfig)
   - [Pre-requisites](#pre-requisites)
   - [Install](#install)
   - [Resource Definition](#resource-definition)
     - [Sample](#sample)
-    - [Spec](#spec)
+      - [Spec](#spec)
+        - [region](#region)
+        - [collection_id](#collection_id)
+        - [guid](#guid)
+        - [apikey](#apikey)
+        - [apikeyRef](#apikeyref)
+        - [Attributes](#attributes)
   - [Getting Started](#getting-started)
-    - [Configure IBM Cloud App Config service Instance](#)
-    - [Configure the IBM Cloud App Config Razee plugin](#)
-  - [Known Issues](#known-issues)
-    
+    - [Configure IBM Cloud App Configuration service instance](#configure-ibm-cloud-app-configuration-service-instance)
+      - [Configure the IBM Cloud App Configuration Razee plugin](#configure-the-ibm-cloud-app-configuration-razee-plugin)
+  - [Known Issues/Bugs](#known-issuesbugs)
   - [Tutorial](#tutorial)
     - [Controlling kubernetes deployment of resources (ConfigMaps, Deployments etc) with App Configuration Feature Flag](#controlling-kubernetes-deployment-of-resources-configmaps-deployments-etc-with-app-configuration-feature-flag)
 # IBMCloudAppConfig
@@ -257,7 +262,7 @@ spec:
 * As you enable or disable the feature flag in the IBM Cloud App Configuration service console, the corresponding flag values are updated in the `icappconfig` resource. Hence, all the values are available to the cluster.
 * You can use these flag values with other kubernetes resources using Razee Mustache templates.
 
-### Known Issues/Bugs
+## Known Issues/Bugs 
 **Delete of feature flag from IBM Cloud App Configuration Instance**
  * Deletion of flag doesn't delete the flag from the `IBMCloudAppConfig` CRD data. Until, this is fixed, the workaround is to delete and recreate the `IBMCloudAppConfig` resource.
  To Delete the resource run this command.
