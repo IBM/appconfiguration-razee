@@ -14,13 +14,7 @@
 const objectPath = require('object-path');
 const { BaseController, FetchEnvs } = require('@razee/razeedeploy-core');
 
-const { AppConfigurationCore, UrlBuilder, Logger } = require('ibm-appconfiguration-node-core');
-const { AppConfigurationFeature } = require('ibm-appconfiguration-node-feature');
-
-// Enable logger
-var appconfigLogger = Logger.getInstance();
-appconfigLogger.setDebug(true);
-
+const {AppConfiguration} = require('ibm-appconfiguration-node-sdk');
 
 module.exports = class IBMCloudAppConfigController extends BaseController {
 
@@ -32,11 +26,12 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
   async added() {
     //Initialization
     let guid = objectPath.get(this.data, ['object', 'spec', 'guid']);
-    let collectionId = objectPath.get(this.data,  ['object', 'spec', 'collection_id']);
+    let identityId = objectPath.get(this.data, ['object', 'spec', 'identityId']);
+    let collectionId = objectPath.get(this.data,  ['object', 'spec', 'collectionId']);
     let apikey = objectPath.get(this.data,  ['object', 'spec', 'apikey']);
     let apikeyRef = objectPath.get(this.data, ['object', 'spec', 'apikeyRef']);
    
-    let attributesPairs = objectPath.get(this.data, ['object', 'spec', 'attributes']);
+    let attributesPairs = objectPath.get(this.data, ['object', 'spec', 'identityAttributes']);
     let attributes = {};
     let url = objectPath.get(this.data, ['object', 'spec' ,'url']);
     let region = objectPath.get(this.data, ['object', 'spec', 'region']);
@@ -46,17 +41,11 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
       let secretKey = objectPath.get(apikeyRef, 'valueFrom.secretKeyRef.key');
       apikey = await this._getSecretData(secretName, secretKey, secretNamespace);
     }
-    let coreClient = AppConfigurationCore.getInstance({ 
-       region: region,
-       guid: guid,
-       apikey: apikey
-    });
-    let client = AppConfigurationFeature.getInstance({
-       collectionId: collectionId
-    });
+    const client = AppConfiguration.getInstance();
+    client.init(region, guid, apikey);
+    client.setCollectionId(collectionId);
     if (attributesPairs) {
       attributesPairs.forEach(attr => attributes[attr.name] = attr.value);
-      client.setClientAttributes(attributes);
     }
     let featuresList = {};
 
@@ -71,28 +60,42 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
       data: {}
     };
     const sleep = (waitTimeInMs) => new Promise(resolve => setTimeout(resolve, waitTimeInMs));
-    sleep(10000).then(() => {
+    sleep(5000).then(() => {
        features = client.getFeatures();
        featuresList = Object.keys(features);
        featuresList.forEach((feature) => {
-	   featureMap[feature] = features[feature].getCurrentValue();
+	   featureMap[feature] = features[feature].getCurrentValue(identityId, attributes);
        });
        patchObject.data = featureMap;
        this.patchSelf(patchObject)
           .then(res => objectPath.set(this.data, 'object', res) );
     });
     // Get the current values of all the features
-    client.emitter.on('featuresUpdate', (f) => {
-       let features = client.getFeatures();
-       // Update the features' current values
-       featuresList = Object.keys(features);
-       featuresList.forEach((feature) => {
-          featureMap[feature] = features[feature].getCurrentValue();
-       });
-       patchObject.data = featureMap;
-       this.patchSelf(patchObject)
-          .then(res => objectPath.set(this.data, 'object', res) );
-    }); 
+    
+    if(client.emitter.listenerCount('featuresUpdate') < 1) {
+        client.emitter.on('featuresUpdate', (f) => {
+           let existingFeaturesList = [];
+           if (this.data.object.data) {
+             existingFeaturesList = Object.keys(this.data.object.data);
+           }
+	   let features = client.getFeatures();
+               
+	   featuresList = Object.keys(features);
+           if (existingFeaturesList.length > featuresList.length) {
+           // Feature is deleted
+             let featuresToDelete =  existingFeaturesList
+                                     .filter(x => !featuresList.includes(x));
+             featuresToDelete.forEach(feature => featureMap[feature] = null);
+           }
+	   // Update the features' current values
+	   featuresList.forEach((feature) => {
+	      featureMap[feature] = features[feature].getCurrentValue(identityId, attributes);
+	   });
+	   patchObject.data = featureMap;
+	   this.patchSelf(patchObject)
+	       .then(res => objectPath.set(this.data, 'object', res) );
+	   }); 
+    }
   }
 
   async _getSecretData(name, key, ns) {

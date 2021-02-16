@@ -1,19 +1,13 @@
-- [IBMCloudAppConfig](#ibmcloudappconfig)
+- [IBMCloudAppConfig](#IBMCloudAppConfig)
   - [Pre-requisites](#pre-requisites)
   - [Install](#install)
   - [Resource Definition](#resource-definition)
     - [Sample](#sample)
-      - [Spec](#spec)
-        - [region](#region)
-        - [collection_id](#collection_id)
-        - [guid](#guid)
-        - [apikey](#apikey)
-        - [apikeyRef](#apikeyref)
-        - [Attributes](#attributes)
+    - [Spec](#spec)
   - [Getting Started](#getting-started)
-    - [Configure IBM Cloud App Configuration service instance](#configure-ibm-cloud-app-configuration-service-instance)
-      - [Configure the IBM Cloud App Configuration Razee plugin](#configure-the-ibm-cloud-app-configuration-razee-plugin)
-  - [Known Issues/Bugs](#known-issuesbugs)
+    - [Configure IBM Cloud App Config service Instance](#)
+    - [Configure the IBM Cloud App Config Razee plugin](#)
+    
   - [Tutorial](#tutorial)
     - [Controlling kubernetes deployment of resources (ConfigMaps, Deployments etc) with App Configuration Feature Flag](#controlling-kubernetes-deployment-of-resources-configmaps-deployments-etc-with-app-configuration-feature-flag)
 # IBMCloudAppConfig
@@ -92,10 +86,11 @@ metadata:
   name: appconfig-feature-flagset
   namespace: default
 spec:
+  identityId: "123"
   region: "us-south"
   guid: "<YOUR_GUID>"
-  collection_id: "dev"
-  attributes:
+  collectionId: "dev"
+  identityAttributes:
     - name: cluster-type
       value: 'minikube'
   apikeyRef:
@@ -109,15 +104,16 @@ spec:
 #### Spec
 
 **Path**: `.spec`</br>
-**Description**: `spec` is required and **must** include allof `region`, `guid`, `collection_id`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `attributes` object is optional. <br/>
+**Description**: `spec` is required and **must** include allof `identityId`, `region`, `guid`, `collectionId`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `identityAttributes` object is optional.
 **Schema**:
 ```yaml
         spec:
           type: object
           x-kubernetes-preserve-unknown-fields: true
           allOf:
+            - required: [identityId]
             - required: [region]
-            - required: [collection_id]
+            - required: [collectionId]
             - required: [guid]
           # you must define oneOf:
           oneOf:
@@ -126,13 +122,13 @@ spec:
           properties:
             region:
               type: string
-            collection_id:
+            collectionId:
               type: string
             guid:
               type: string
             apikey:
               type: string
-            apkeyRef:
+            apikeyRef:
               type: object
               required: [valueFrom]
               properties:
@@ -143,19 +139,28 @@ spec:
                     secretKeyRef:
                     ...
 ```
+##### identityId
+**Path**: `.spec.identityId`</br>
+**Description**: IdentityId is a unique parameter required to perform the feature flag evaluations.
+**Schema**:
+```yaml
+identityId:
+  type: string
+```
+
 
 ##### region
 **Path**: `.spec.region`</br>
-**Description**: Region is required to identify the region in which IBM Cloud App Configuration instance is provisioned.<br/>
+**Description**: Region is required to identify the region in which IBM Cloud App Configuration instance is provisioned.
 **Schema**:
 ```yaml
 region:
   type: string
 ```
 
-##### collection_id
-**Path**: `.spec.apikey`</br>
-**Description**: Collection ID is required to identify the collection which groups the flag flag values required in the kubernetes cluster. The plugin is designed to work with one collection per cluster. <br/>
+##### collectionId
+**Path**: `.spec.collectionId`</br>
+**Description**: Collection ID is required to identify the collection which groups the flag flag values required in the kubernetes cluster. The plugin is designed to work with one collection per cluster.
 **Schema**:
 ```yaml
 apikey:
@@ -164,7 +169,7 @@ apikey:
 
 ##### guid
 **Path**: `.spec.guid`</br>
-**Description**: GUID is required to identify the IBM Cloud App Configuration instance. <br/>
+**Description**: GUID is required to identify the IBM Cloud App Configuration instance.
 **Schema**:
 ```yaml
 guid:
@@ -173,7 +178,7 @@ guid:
 
 ##### apikey
 **Path**: `.spec.apikey`</br>
-**Description**: apikey is required to authenticate the API calls made by the razee plugin to IBM Cloud App Configuration. <br/>
+**Description**: apikey is required to authenticate the API calls made by the razee plugin to IBM Cloud App Configuration.=
 **Schema**:
 ```yaml
 apikey:
@@ -182,7 +187,7 @@ apikey:
 
 ##### apikeyRef
 **Path**: `.spec.apikeyRef`</br>
-**Description**: apikeyRef is the recommended way to pass the apikey from kubernetes secrets. <br/>
+**Description**: apikeyRef is the recommended way to pass the apikey from kubernetes secrets.
 **Schema**:
 ```yaml
  apkeyRef:
@@ -205,12 +210,12 @@ apikey:
                 type: string
 ```
 
-##### Attributes
-**Path**: `.spec.attributes`</br>
-**Description**: Attributes are **optional** client attributes used for targetting flag values to a segment of clusters/users. <br>
+##### identityAttributes
+**Path**: `.spec.identityAttributes`</br>
+**Description**: IdentityAttributes are **optional** client attributes used for targetting flag values to a segment of clusters/users.
 **Schema**:
 ```yaml
-attributes:
+identityAttributes:
     type: array
     items:
       type: object
@@ -235,10 +240,11 @@ metadata:
   name: appconfig-feature-flagset
   namespace: default
 spec:
+  identityId: "123"
   region: "us-south"
   guid: "<GUID>"
-  collection_id: "dev"
-  attributes:
+  collectionId: "dev"
+  identityAttributes:
     - name: cluster-type
       value: 'minikube'
   apikeyRef:
@@ -258,22 +264,9 @@ spec:
     ```
     kubectl describe icappconfig appconfig-feature-flagset
     ```
-* This resource is configured to fetch the values of the feature flags grouped by the collection_id `dev`.
+* This resource is configured to fetch the values of the feature flags grouped by the collectionId `dev`.
 * As you enable or disable the feature flag in the IBM Cloud App Configuration service console, the corresponding flag values are updated in the `icappconfig` resource. Hence, all the values are available to the cluster.
 * You can use these flag values with other kubernetes resources using Razee Mustache templates.
-
-## Known Issues/Bugs 
-**Delete of feature flag from IBM Cloud App Configuration Instance**
- * Deletion of flag doesn't delete the flag from the `IBMCloudAppConfig` CRD data. Until, this is fixed, the workaround is to delete and recreate the `IBMCloudAppConfig` resource.
- To Delete the resource run this command.
- ```
-   kubectl delete icpappconfig <name_of_the_resource>
- ```
-
- **Edit of the resource**
- * Edit operation (`kubectl edit icappconfig <name_of_resource>`) on the custom resource `IBMCloudAppConfig` is not supported yet. To edit the values, delete and recreate with modified values.
-
- * If you have entered incorrect instance details (guid, region, collection_id, apikey), delete and recreate the resource with the  correct details and wait for 10 mintues to fetch flag values.
 
 ## Tutorial
 
@@ -295,11 +288,12 @@ spec:
             name: appconfig-feature-flagset
             namespace: default
           spec:
+            identityId: "123"
             region: "us-south"
             instanceId: "YOUR_INSTANCE_ID"
             collectionId: "dev"
             apikey: "YOUR_API_KEY"
-            attributes:
+            identityAttributes:
               - name: cluster-type
                 value: "standard"
               - name: cluster-version
