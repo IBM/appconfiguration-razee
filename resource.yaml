@@ -69,14 +69,17 @@ items:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   allOf:
+                    - required: [identityId]
                     - required: [region]
-                    - required: [collection_id]
+                    - required: [collectionId]
                     - required: [guid]
                   # you must define oneOf:
                   oneOf:
                     - required: [apikey]
                     - required: [apikeyRef]
                   properties:
+                    identityId:
+                      type: string
                     region:
                       type: string
                     collection_id:
@@ -103,7 +106,7 @@ items:
                                   type: string
                                 namespace:
                                   type: string
-                    attributes:
+                    identityAttributes:
                       type: array
                       items:
                         type: object
