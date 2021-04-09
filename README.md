@@ -11,7 +11,7 @@
   - [Tutorial](#tutorial)
     - [Controlling kubernetes deployment of resources (ConfigMaps, Deployments etc) with App Configuration Feature Flag](#controlling-kubernetes-deployment-of-resources-configmaps-deployments-etc-with-app-configuration-feature-flag)
 # IBMCloudAppConfig
-IBMCloudAppConfig is a custom resource based on [Razee](https://razee.io/). IBMCloudAppConfig is built using the IBM Cloud App Configuration Node.js SDK to fetch and evaluate feature flag values. The feature flag values are made available to resources on the Kubernetes cluster.
+IBMCloudAppConfig is a custom resource based on [Razee](https://razee.io/). IBMCloudAppConfig is built using the IBM Cloud App Configuration Node.js SDK to fetch and evaluate configurations (features and properties) values. The feature flag and property values are made available to resources on the Kubernetes cluster.
 
 ## Pre-requisites
 * Install `kubectl` on your terminal to interact with your kubernetes cluster.
@@ -80,10 +80,10 @@ IBMCloudAppConfig is a custom resource based on [Razee](https://razee.io/). IBMC
 ### Sample
 
 ```yaml
-apiVersion: deploy.razee.io/v1beta2
+apiVersion: deploy.razee.io/v1beta1
 kind: IBMCloudAppConfig
 metadata:
-  name: appconfig-feature-flagset
+  name: appconfig-set
   namespace: default
 spec:
   identityId: "123"
@@ -228,16 +228,17 @@ identityAttributes:
 ## Getting Started
 ### Configure IBM Cloud App Configuration service instance
 * Create an instance of IBM Cloud App Configuration service.
-* Create a collection and feature flags from the service dashboard.
+* Create a collection.
+* Create feature flags and properties from the service dashboard.
 * Go to service credentials tab and create new credentials.
 
 #### Configure the IBM Cloud App Configuration Razee plugin
 * Create a yaml file `appconfig.yaml` with the following specifcations. Assuming the `apikey` is stored in a kubernetes secret. Alternatively, you can pass the `apikey` as string too.
 ```yaml
-apiVersion: deploy.razee.io/v1beta2
+apiVersion: deploy.razee.io/v1beta1
 kind: IBMCloudAppConfig
 metadata:
-  name: appconfig-feature-flagset
+  name: appconfig-set
   namespace: default
 spec:
   identityId: "123"
@@ -264,8 +265,9 @@ spec:
     ```
     kubectl describe icappconfig appconfig-feature-flagset
     ```
-* This resource is configured to fetch the values of the feature flags grouped by the collectionId `dev`.
-* As you enable or disable the feature flag in the IBM Cloud App Configuration service console, the corresponding flag values are updated in the `icappconfig` resource. Hence, all the values are available to the cluster.
+* This resource is configured to fetch the values of the feature flags and properties grouped by the collectionId `dev`.
+* **The flag and properties values are available to the custom resource with keys pre-fixed with either `flag-` or `prop-`. For eg: a feature flag with id as `nginx-label` will be available as `flag-nginx-label` and a property with the same id will be available as `prop-nginx-label`.**
+* As you enable or disable the feature flag in the IBM Cloud App Configuration service console, the corresponding flag values are updated in the `icappconfig` resource. Similarly, changes in the properties values are also updated in the `icappconfig` resource.Hence, all the values are available to the cluster.
 * You can use these flag values with other kubernetes resources using Razee Mustache templates.
 
 ## Tutorial
@@ -276,21 +278,21 @@ spec:
 * Now, we need to create few custom resources defined by Razee. Let us use `ManagedSet` to create IBMCloudAppConfig, Deployment, ConfigMap, MustacheTemplate from a single file 
     ```yaml
     kind: ManagedSet
-    apiVersion: deploy.razee.io/v1beta2
+    apiVersion: deploy.razee.io/v1alpha1
     metadata:
       name: appconfig-managed-set
       namespace: default
     spec:
       resources:
-        - apiVersion: deploy.razee.io/v1beta2
+        - apiVersion: deploy.razee.io/v1beta1
           kind: IBMCloudAppConfig
           metadata:
-            name: appconfig-feature-flagset
+            name: appconfig-set
             namespace: default
           spec:
             identityId: "123"
             region: "us-south"
-            instanceId: "YOUR_INSTANCE_ID"
+            guid: "YOUR_INSTANCE_GUID"
             collectionId: "dev"
             apikey: "YOUR_API_KEY"
             identityAttributes:
@@ -298,7 +300,7 @@ spec:
                 value: "standard"
               - name: cluster-version
                 value: "1.18"
-        - apiVersion: "deploy.razee.io/v1beta2"
+        - apiVersion: "deploy.razee.io/v1alpha1"
           kind: MustacheTemplate
           metadata:
             name: appconfig-mustache-template
@@ -310,15 +312,15 @@ spec:
                 genericKeyRef:
                   apiVersion: deploy.razee.io/v1beta1
                   kind: IBMCloudAppConfig
-                  name: appconfig-feature-flagset
-                  key: replica-count
+                  name: appconfig-set
+                  key: flag-replica-count
             - name: nginx-label
               valueFrom:
                 genericKeyRef:
                   apiVersion: deploy.razee.io/v1beta1
                   kind: IBMCloudAppConfig
-                  name: appconfig-feature-flagset
-                  key: nginx-label
+                  name: appconfig-set
+                  key: prop-nginx-label
             templates:
             - apiVersion: v1
               kind: ConfigMap

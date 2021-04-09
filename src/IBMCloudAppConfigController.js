@@ -16,6 +16,8 @@ const { BaseController, FetchEnvs } = require('@razee/razeedeploy-core');
 
 const {AppConfiguration} = require('ibm-appconfiguration-node-sdk');
 
+const flagPrefix = "flag-";
+const propPrefix = "prop-";
 module.exports = class IBMCloudAppConfigController extends BaseController {
 
   constructor(params) {
@@ -33,7 +35,6 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
    
     let attributesPairs = objectPath.get(this.data, ['object', 'spec', 'identityAttributes']);
     let attributes = {};
-    let url = objectPath.get(this.data, ['object', 'spec' ,'url']);
     let region = objectPath.get(this.data, ['object', 'spec', 'region']);
     if (apikeyRef) {
       let secretName = objectPath.get(apikeyRef, 'valueFrom.secretKeyRef.name');
@@ -48,9 +49,13 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
       attributesPairs.forEach(attr => attributes[attr.name] = attr.value);
     }
     let featuresList = {};
+    let propertiesList = {};
 
     let features = {};
     let featureMap = {};
+    let properties = {};
+    let propertyMap = {};
+    let configurationsMap = {};
     let patchObject = {
       metadata: {
 	labels: {
@@ -62,39 +67,49 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
     const sleep = (waitTimeInMs) => new Promise(resolve => setTimeout(resolve, waitTimeInMs));
     sleep(5000).then(() => {
        features = client.getFeatures();
+       properties = client.getProperties();
+       
        featuresList = Object.keys(features);
+       propertiesList = Object.keys(properties);
        featuresList.forEach((feature) => {
-	   featureMap[feature] = features[feature].getCurrentValue(identityId, attributes);
+	   featureMap[flagPrefix + feature] = features[feature].getCurrentValue(identityId, attributes);
        });
-       patchObject.data = featureMap;
+       propertiesList.forEach((property) => {
+           propertyMap[propPrefix + property] = properties[property].getCurrentValue(identityId, attributes);
+       });
+       configurationsMap = {...featureMap, ...propertyMap};
+       patchObject.data = configurationsMap;
        this.patchSelf(patchObject)
           .then(res => objectPath.set(this.data, 'object', res) );
     });
     // Get the current values of all the features
     
-    if(client.emitter.listenerCount('featuresUpdate') < 1) {
-        client.emitter.on('featuresUpdate', (f) => {
-           let existingFeaturesList = [];
+    if(client.emitter.listenerCount('configurationUpdate') < 1) {
+        client.emitter.on('configurationUpdate', (f) => {
+           let existingConfigurationsList = [];
            if (this.data.object.data) {
-             existingFeaturesList = Object.keys(this.data.object.data);
+             existingConfigurationsList = Object.keys(this.data.object.data);
            }
-	   let features = client.getFeatures();
-               
-	   featuresList = Object.keys(features);
-           if (existingFeaturesList.length > featuresList.length) {
-           // Feature is deleted
-             let featuresToDelete =  existingFeaturesList
-                                     .filter(x => !featuresList.includes(x));
-             featuresToDelete.forEach(feature => featureMap[feature] = null);
+           let newFeatures = client.getFeatures();
+           let newProperties = client.getProperties();
+           let newConfigurations = Object.keys(newFeatures).map(f => flagPrefix + f).concat(Object.keys(newProperties).map(p => propPrefix + p));
+           let newConfigurationsList = Object.keys(newConfigurations);
+           if (existingConfigurationsList.length > newConfigurationsList.length) {
+             // Feature or properties to be deleted
+             let configurationsToDelete = existingConfigurationsList.
+                                           filter(x => !newConfigurationsList.includes(x)); 
+             configurationsToDelete.forEach(config => configurationsMap[config] = null);
            }
-	   // Update the features' current values
-	   featuresList.forEach((feature) => {
-	      featureMap[feature] = features[feature].getCurrentValue(identityId, attributes);
-	   });
-	   patchObject.data = featureMap;
+           Object.keys(newFeatures).forEach((f) => {
+             configurationsMap[flagPrefix + f] = newFeatures[f].getCurrentValue(identityId, attributes);
+           });
+           Object.keys(newProperties).forEach((p) => {
+             configurationsMap[propPrefix + p] = newProperties[p].getCurrentValue(identityId, attributes);
+           });
+           patchObject.data = configurationsMap;
 	   this.patchSelf(patchObject)
 	       .then(res => objectPath.set(this.data, 'object', res) );
-	   }); 
+        });
     }
   }
 
