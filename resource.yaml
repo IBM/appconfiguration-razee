@@ -44,7 +44,7 @@ items:
                       optional: true
               imagePullPolicy: Always
               name: appconfigibm-controller
-  - apiVersion: apiextensions.k8s.io/v1beta1
+  - apiVersion: apiextensions.k8s.io/v1
     kind: CustomResourceDefinition
     metadata:
       # name must match the spec fields below, and be in the form: <plural>.<group>
@@ -59,6 +59,9 @@ items:
           served: true
           # One and only one version must be marked as the storage version.
           storage: true
+          subresources:
+            # status enables the status subresource
+            status: {}
           schema:
           # openAPIV3Schema is the schema for validating custom objects.
             openAPIV3Schema:
@@ -88,7 +91,7 @@ items:
                       type: string
                     apikey:
                       type: string
-                    apkeyRef:
+                    apikeyRef:
                       type: object
                       required: [valueFrom]
                       properties:
@@ -153,8 +156,5 @@ items:
         # shortNames allow shorter string to match your resource on the CLI
         shortNames:
           - icappconfig
-      subresources:
-        # status enables the status subresource
-        status: {}
       # prune unknown fields
       preserveUnknownFields: false
