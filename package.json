@@ -1,7 +1,7 @@
 {
   "name": "IBMCloudAppConfig",
   "version": "1.0.0",
-  "description": "Razee Custom Resource to pull IBMCloud App Configuration values into a kubernetes environment",
+  "description": "Razee Custom Resource to fetch IBMCloud App Configuration values into a kubernetes environment",
   "main": "src/index.js",
   "keywords": [
     "kubernetes",
