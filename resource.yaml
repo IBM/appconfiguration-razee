@@ -75,6 +75,7 @@ items:
                     - required: [identityId]
                     - required: [region]
                     - required: [collectionId]
+                    - required: [environmentId]
                     - required: [guid]
                   # you must define oneOf:
                   oneOf:
@@ -85,7 +86,9 @@ items:
                       type: string
                     region:
                       type: string
-                    collection_id:
+                    collectionId:
+                      type: string
+                    environmentId:
                       type: string
                     guid:
                       type: string
@@ -124,26 +127,6 @@ items:
                 status:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true                
-        - name: v1beta2
-          # Each version can be enabled/disabled by Served flag.
-          served: true
-          # One and only one version must be marked as the storage version.
-          storage: false
-          schema:
-            # openAPIV3Schema is the schema for validating custom objects.
-            openAPIV3Schema:
-              type: object
-              required: [spec]
-              properties:
-                spec:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                data:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                status:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true 
       # either Namespaced or Cluster
       scope: Namespaced
       names:

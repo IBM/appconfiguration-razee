@@ -30,6 +30,7 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
     let guid = objectPath.get(this.data, ['object', 'spec', 'guid']);
     let identityId = objectPath.get(this.data, ['object', 'spec', 'identityId']);
     let collectionId = objectPath.get(this.data,  ['object', 'spec', 'collectionId']);
+    let environmentId = objectPath.get(this.data,  ['object', 'spec', 'environmentId']);
     let apikey = objectPath.get(this.data,  ['object', 'spec', 'apikey']);
     let apikeyRef = objectPath.get(this.data, ['object', 'spec', 'apikeyRef']);
    
@@ -44,7 +45,7 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
     }
     const client = AppConfiguration.getInstance();
     client.init(region, guid, apikey);
-    client.setCollectionId(collectionId);
+    client.setContext(collectionId, environmentId);
     if (attributesPairs) {
       attributesPairs.forEach(attr => attributes[attr.name] = attr.value);
     }

@@ -90,6 +90,7 @@ spec:
   region: "us-south"
   guid: "<YOUR_GUID>"
   collectionId: "dev"
+  environmentId: "dev"
   identityAttributes:
     - name: cluster-type
       value: 'minikube'
@@ -104,7 +105,7 @@ spec:
 #### Spec
 
 **Path**: `.spec`</br>
-**Description**: `spec` is required and **must** include allof `identityId`, `region`, `guid`, `collectionId`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `identityAttributes` object is optional.
+**Description**: `spec` is required and **must** include allof `identityId`, `region`, `guid`, `collectionId`, `environmentId`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `identityAttributes` object is optional.
 **Schema**:
 ```yaml
         spec:
@@ -114,6 +115,7 @@ spec:
             - required: [identityId]
             - required: [region]
             - required: [collectionId]
+            - required: [environmentId]
             - required: [guid]
           # you must define oneOf:
           oneOf:
@@ -123,6 +125,8 @@ spec:
             region:
               type: string
             collectionId:
+              type: string
+            environmentId:
               type: string
             guid:
               type: string
@@ -163,7 +167,16 @@ region:
 **Description**: Collection ID is required to identify the collection which groups the flag flag values required in the kubernetes cluster. The plugin is designed to work with one collection per cluster.
 **Schema**:
 ```yaml
-apikey:
+collectionId:
+  type: string
+```
+
+##### environmentId
+**Path**: `.spec.environmentId`</br>
+**Description**:  Id of the environment created in App Configuration service instance under the Environments section
+**Schema**:
+```yaml
+environmentId:
   type: string
 ```
 
@@ -228,8 +241,9 @@ identityAttributes:
 ## Getting Started
 ### Configure IBM Cloud App Configuration service instance
 * Create an instance of IBM Cloud App Configuration service.
-* Create a collection.
+* Create a collection. An Environment with ID: "dev" is created by default. You can also create other environments.
 * Create feature flags and properties from the service dashboard.
+* Feature flags and properties in other environments are created by default with default values for each features and properties.
 * Go to service credentials tab and create new credentials.
 
 #### Configure the IBM Cloud App Configuration Razee plugin
@@ -245,6 +259,7 @@ spec:
   region: "us-south"
   guid: "<GUID>"
   collectionId: "dev"
+  environmentId: "dev"
   identityAttributes:
     - name: cluster-type
       value: 'minikube'
@@ -263,11 +278,15 @@ spec:
 
 * You can do a describe on your `IBMCloudAppConfig`
     ```
-    kubectl describe icappconfig appconfig-feature-flagset
+    kubectl describe icappconfig appconfig-set
     ```
 * This resource is configured to fetch the values of the feature flags and properties grouped by the collectionId `dev`.
 * **The flag and properties values are available to the custom resource with keys pre-fixed with either `flag-` or `prop-`. For eg: a feature flag with id as `nginx-label` will be available as `flag-nginx-label` and a property with the same id will be available as `prop-nginx-label`.**
 * As you enable or disable the feature flag in the IBM Cloud App Configuration service console, the corresponding flag values are updated in the `icappconfig` resource. Similarly, changes in the properties values are also updated in the `icappconfig` resource.Hence, all the values are available to the cluster.
+* You can change the environmentId specified in the custom resource to the other environments by using the kubectl edit command. The custom resource will be updated with the updated values as soon as the values are modified.
+    ```
+      kubectl edit icappconfig appconfig-set
+    ```
 * You can use these flag values with other kubernetes resources using Razee Mustache templates.
 
 ## Tutorial
@@ -294,6 +313,7 @@ spec:
             region: "us-south"
             guid: "YOUR_INSTANCE_GUID"
             collectionId: "dev"
+            environmentId: "dev"
             apikey: "YOUR_API_KEY"
             identityAttributes:
               - name: cluster-type
@@ -359,7 +379,7 @@ spec:
     ```
     kubectl apply -f managedset.yaml
     ```
-* The above command should create multiple custom resources. It should create a IBMCloudAppConfig (with speficied IBM Cloud App Configuration instance name, collection name and feature names), for using the feature flag and a deployment object with values provided by the Mustache template.
+* The above command should create multiple custom resources. It should create a IBMCloudAppConfig (with speficied IBM Cloud App Configuration instance name, collection name, environment ID and feature names), for using the feature flag and a deployment object with values provided by the Mustache template.
 * Verify that a IBMCloudAppConfig, ManagedSet and Deployment is created. It will take about 3 minutes for the deployment object to get created and updated.
 
     ```
