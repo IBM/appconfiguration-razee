@@ -27,7 +27,7 @@ items:
           serviceAccountName: razeedeploy-sa
           containers:
             # For best practice, Use the tagged image
-            - image: apprapp-razee:local
+            - image: icr.io/appconfiguration/apprapp-razee:latest
               resources:
                 limits:
                   memory: 200Mi
@@ -42,7 +42,7 @@ items:
                       name: razeedeploy-overrides
                       key: CRD_WATCH_TIMEOUT_SECONDS
                       optional: true
-              imagePullPolicy: Never
+              imagePullPolicy: Always
               name: appconfigibm-controller
   - apiVersion: apiextensions.k8s.io/v1
     kind: CustomResourceDefinition
