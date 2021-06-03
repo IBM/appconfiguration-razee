@@ -86,12 +86,12 @@ metadata:
   name: appconfig-set
   namespace: default
 spec:
-  identityId: "123"
+  entityId: <"unique entity id like '123'">
   region: "us-south"
   guid: "<YOUR_GUID>"
   collectionId: "dev"
   environmentId: "dev"
-  identityAttributes:
+  entityAttributes:
     - name: cluster-type
       value: 'minikube'
   apikeyRef:
@@ -105,53 +105,196 @@ spec:
 #### Spec
 
 **Path**: `.spec`</br>
-**Description**: `spec` is required and **must** include allof `identityId`, `region`, `guid`, `collectionId`, `environmentId`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `identityAttributes` object is optional.
+**Description**: `spec` is required and **must** include allof `entityId`, `region`, `guid`, `collectionId`, `environmentId`. It **must** include oneOf `apikey` or `apikeyRef`. Client attributes `entityAttributes` object is optional.
 **Schema**:
 ```yaml
-        spec:
-          type: object
-          x-kubernetes-preserve-unknown-fields: true
-          allOf:
-            - required: [identityId]
-            - required: [region]
-            - required: [collectionId]
-            - required: [environmentId]
-            - required: [guid]
-          # you must define oneOf:
-          oneOf:
-            - required: [apikey]
-            - required: [apikeyRef]
-          properties:
-            region:
-              type: string
-            collectionId:
-              type: string
-            environmentId:
-              type: string
-            guid:
-              type: string
-            apikey:
-              type: string
-            apikeyRef:
-              type: object
-              required: [valueFrom]
-              properties:
-                valueFrom:
+                spec:
                   type: object
-                  required: [secretKeyRef]
+                  x-kubernetes-preserve-unknown-fields: true
+                  allOf:
+                  oneOf:
+                    - required: [entityId]
+                    - required: [entityIdRef]
+                  # you must define oneOf:
+                  oneOf:
+                    - required: [region]
+                    - required: [regionRef]
+                  oneOf:
+                    - required: [collectionId]
+                    - required: [collectionIdRef]
+                  oneOf:
+                    - required: [environmentId]
+                    - required: [environmentIdRef]
+                  oneOf:
+                    - required: [guid]
+                    - required: [guidRef]
+                  oneOf:
+                    - required: [apikey]
+                    - required: [apikeyRef]
                   properties:
-                    secretKeyRef:
-                    ...
+                    entityId:
+                      type: string
+                    region:
+                      type: string
+                    collectionId:
+                      type: string
+                    environmentId:
+                      type: string
+                    guid:
+                      type: string
+                    apikey:
+                      type: string
+                    entityIdRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    regionRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    collectionIdRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    environmentIdRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    guidRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    apikeyRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [secretKeyRef]
+                          properties:
+                            secretKeyRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    entityAttributes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
 ```
-##### identityId
-**Path**: `.spec.identityId`</br>
-**Description**: IdentityId is a unique parameter required to perform the feature flag evaluations.
+##### entityId
+**Path**: `.spec.entityId`</br>
+**Description**: entityId is a unique parameter required to perform the feature flag evaluations.
 **Schema**:
 ```yaml
-identityId:
+entityId:
   type: string
 ```
 
+##### entityIdRef
+**Path**: `.spec.entityIdRef`</br>
+**Description**: entityIdRef is reference to configmap to read unique parameter required to perform the feature flag evaluations.
+**Schema**:
+```yaml
+    entityIdRef:
+      type: object
+      required: [valueFrom]
+      properties:
+        valueFrom:
+          type: object
+          required: [configMapRef]
+          properties:
+            configMapRef:
+              type: object
+              required: [name, key]
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                namespace:
+                  type: string
+```
 
 ##### region
 **Path**: `.spec.region`</br>
@@ -160,6 +303,31 @@ identityId:
 ```yaml
 region:
   type: string
+```
+
+##### regionRef
+**Path**: `.spec.regionRef`</br>
+**Description**: RegionRef is a reference to configmap to read region value which is required to identify the region in which IBM Cloud App Configuration instance is provisioned.
+**Schema**:
+```yaml
+    regionRef:
+      type: object
+      required: [valueFrom]
+      properties:
+      valueFrom:
+        type: object
+        required: [configMapRef]
+        properties:
+          configMapRef:
+            type: object
+            required: [name, key]
+            properties:
+              name:
+                type: string
+              key:
+                type: string
+              namespace:
+                type: string
 ```
 
 ##### collectionId
@@ -171,6 +339,30 @@ collectionId:
   type: string
 ```
 
+##### collectionIdRef
+**Path**: `.spec.collectionIdRef`</br>
+**Description**: Collection ID can be read from a configmap and is required to identify the collection which groups the flag flag values required in the kubernetes cluster. The plugin is designed to work with one collection per cluster.
+**Schema**:
+```yaml
+    collectionIdRef:
+      type: object
+      required: [valueFrom]
+      properties:
+        valueFrom:
+          type: object
+          required: [configMapRef]
+          properties:
+            configMapRef:
+              type: object
+              required: [name, key]
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                namespace:
+                  type: string
+```
 ##### environmentId
 **Path**: `.spec.environmentId`</br>
 **Description**:  Id of the environment created in App Configuration service instance under the Environments section
@@ -178,6 +370,31 @@ collectionId:
 ```yaml
 environmentId:
   type: string
+```
+
+##### environmentIdRef
+**Path**: `.spec.environmentIdRef`</br>
+**Description**:  Configmap reference to Id of the environment created in App Configuration service instance under the Environments section
+**Schema**:
+```yaml
+    environmentIdRef:
+      type: object
+      required: [valueFrom]
+      properties:
+        valueFrom:
+          type: object
+          required: [configMapRef]
+          properties:
+            configMapRef:
+              type: object
+              required: [name, key]
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                namespace:
+                  type: string
 ```
 
 ##### guid
@@ -189,6 +406,30 @@ guid:
   type: string
 ```
 
+##### guidRef
+**Path**: `.spec.guidRef`</br>
+**Description**: Configmap Reference to GUID and is required to identify the IBM Cloud App Configuration instance.
+**Schema**:
+```yaml
+    guidRef:
+      type: object
+      required: [valueFrom]
+      properties:
+        valueFrom:
+          type: object
+          required: [configMapRef]
+          properties:
+            configMapRef:
+              type: object
+              required: [name, key]
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                namespace:
+                  type: string
+```
 ##### apikey
 **Path**: `.spec.apikey`</br>
 **Description**: apikey is required to authenticate the API calls made by the razee plugin to IBM Cloud App Configuration.=
@@ -223,20 +464,38 @@ apikey:
                 type: string
 ```
 
-##### identityAttributes
-**Path**: `.spec.identityAttributes`</br>
-**Description**: IdentityAttributes are **optional** client attributes used for targetting flag values to a segment of clusters/users.
+##### entityAttributes
+**Path**: `.spec.entityAttributes`</br>
+**Description**: entityAttributes are **optional** client attributes used for targetting flag values to a segment of clusters/users. It requires a list of name-value pairs. A value can be read from a configMap to using `valueFrom` property.
 **Schema**:
 ```yaml
-identityAttributes:
-    type: array
-    items:
-      type: object
-      properties:
-        name:
-          type: string
-        value:
-          type: string
+entityAttributes:
+  type: array
+  items:
+    type: object
+    required: [name]
+    oneOf:
+      - required: [value]
+      - required: [valueFrom]
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+      valueFrom:
+        type: object
+        required: [configMapRef]
+        properties:
+          configMapRef:
+            type: object
+            required: [name, key]
+            properties:
+              name:
+                type: string
+              key:
+                type: string
+              namespace:
+                type: string
 ```
 ## Getting Started
 ### Configure IBM Cloud App Configuration service instance
@@ -255,12 +514,12 @@ metadata:
   name: appconfig-set
   namespace: default
 spec:
-  identityId: "123"
+  entityId: "<unique entity id like '123'>"
   region: "us-south"
   guid: "<GUID>"
   collectionId: "dev"
   environmentId: "dev"
-  identityAttributes:
+  entityAttributes:
     - name: cluster-type
       value: 'minikube'
   apikeyRef:
@@ -309,13 +568,13 @@ spec:
             name: appconfig-set
             namespace: default
           spec:
-            identityId: "123"
+            entityId: "<unique entity id like '123'>"
             region: "us-south"
             guid: "YOUR_INSTANCE_GUID"
             collectionId: "dev"
             environmentId: "dev"
             apikey: "YOUR_API_KEY"
-            identityAttributes:
+            entityAttributes:
               - name: cluster-type
                 value: "standard"
               - name: cluster-version

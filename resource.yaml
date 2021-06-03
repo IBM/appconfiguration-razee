@@ -72,17 +72,27 @@ items:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   allOf:
-                    - required: [identityId]
-                    - required: [region]
-                    - required: [collectionId]
-                    - required: [environmentId]
-                    - required: [guid]
+                  oneOf:
+                    - required: [entityId]
+                    - required: [entityIdRef]
                   # you must define oneOf:
+                  oneOf:
+                    - required: [region]
+                    - required: [regionRef]
+                  oneOf:
+                    - required: [collectionId]
+                    - required: [collectionIdRef]
+                  oneOf:
+                    - required: [environmentId]
+                    - required: [environmentIdRef]
+                  oneOf:
+                    - required: [guid]
+                    - required: [guidRef]
                   oneOf:
                     - required: [apikey]
                     - required: [apikeyRef]
                   properties:
-                    identityId:
+                    entityId:
                       type: string
                     region:
                       type: string
@@ -94,6 +104,96 @@ items:
                       type: string
                     apikey:
                       type: string
+                    entityIdRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    regionRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    collectionIdRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    environmentIdRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
+                    guidRef:
+                      type: object
+                      required: [valueFrom]
+                      properties:
+                        valueFrom:
+                          type: object
+                          required: [configMapRef]
+                          properties:
+                            configMapRef:
+                              type: object
+                              required: [name, key]
+                              properties:
+                                name:
+                                  type: string
+                                key:
+                                  type: string
+                                namespace:
+                                  type: string
                     apikeyRef:
                       type: object
                       required: [valueFrom]
@@ -112,15 +212,33 @@ items:
                                   type: string
                                 namespace:
                                   type: string
-                    identityAttributes:
+                    entityAttributes:
                       type: array
                       items:
                         type: object
+                        required: [name]
+                        oneOf:
+                          - required: [value]
+                          - required: [valueFrom]
                         properties:
                           name:
                             type: string
                           value:
                             type: string
+                          valueFrom:
+                            type: object
+                            required: [configMapRef]
+                            properties:
+                              configMapRef:
+                                type: object
+                                required: [name, key]
+                                properties:
+                                  name:
+                                    type: string
+                                  key:
+                                    type: string
+                                  namespace:
+                                    type: string
                 data:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true

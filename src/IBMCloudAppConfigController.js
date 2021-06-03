@@ -28,26 +28,73 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
   async added() {
     //Initialization
     let guid = objectPath.get(this.data, ['object', 'spec', 'guid']);
-    let identityId = objectPath.get(this.data, ['object', 'spec', 'identityId']);
+    let entityId = objectPath.get(this.data, ['object', 'spec', 'entityId']);
     let collectionId = objectPath.get(this.data,  ['object', 'spec', 'collectionId']);
     let environmentId = objectPath.get(this.data,  ['object', 'spec', 'environmentId']);
     let apikey = objectPath.get(this.data,  ['object', 'spec', 'apikey']);
+
+    let guidRef = objectPath.get(this.data, ['object', 'spec', 'guidRef']);
+    let entityIdRef = objectPath.get(this.data, ['object', 'spec', 'entityIdRef']);
+    let collectionIdRef = objectPath.get(this.data,  ['object', 'spec', 'collectionIdRef']);
+    let environmentIdRef = objectPath.get(this.data,  ['object', 'spec', 'environmentIdRef']);
     let apikeyRef = objectPath.get(this.data, ['object', 'spec', 'apikeyRef']);
    
-    let attributesPairs = objectPath.get(this.data, ['object', 'spec', 'identityAttributes']);
+    let attributesPairs = objectPath.get(this.data, ['object', 'spec', 'entityAttributes']);
     let attributes = {};
     let region = objectPath.get(this.data, ['object', 'spec', 'region']);
+    let regionRef = objectPath.get(this.data, ['object', 'spec', 'regionRef']);
     if (apikeyRef) {
       let secretName = objectPath.get(apikeyRef, 'valueFrom.secretKeyRef.name');
       let secretNamespace = objectPath.get(apikeyRef, 'valueFrom.secretKeyRef.namespace', this.namespace);
       let secretKey = objectPath.get(apikeyRef, 'valueFrom.secretKeyRef.key');
       apikey = await this._getSecretData(secretName, secretKey, secretNamespace);
     }
+    if (collectionIdRef) {
+      let cmName = objectPath.get(collectionIdRef, 'valueFrom.configMapRef.name');
+      let cmNamespace = objectPath.get(collectionIdRef, 'valueFrom.configMapRef.namespace', this.namespace);
+      let cmKey = objectPath.get(collectionIdRef, 'valueFrom.configMapRef.key');
+      collectionId = await this._getConfig(cmName, cmKey, cmNamespace);
+    }
+    if (environmentIdRef) {
+      let cmName = objectPath.get(environmentIdRef, 'valueFrom.configMapRef.name');
+      let cmNamespace = objectPath.get(environmentIdRef, 'valueFrom.configMapRef.namespace', this.namespace);
+      let cmKey = objectPath.get(environmentIdRef, 'valueFrom.configMapRef.key');
+      environmentId = await this._getConfig(cmName, cmKey, cmNamespace);
+    }
+    if (entityIdRef) {
+      let cmName = objectPath.get(entityIdRef, 'valueFrom.configMapRef.name');
+      let cmNamespace = objectPath.get(entityIdRef, 'valueFrom.configMapRef.namespace', this.namespace);
+      let cmKey = objectPath.get(entityIdRef, 'valueFrom.configMapRef.key');
+      entityId = await this._getConfig(cmName, cmKey, cmNamespace);
+    }
+    if (guidRef) {
+      let cmName = objectPath.get(guidRef, 'valueFrom.configMapRef.name');
+      let cmNamespace = objectPath.get(guidRef, 'valueFrom.configMapRef.namespace', this.namespace);
+      let cmKey = objectPath.get(guidRef, 'valueFrom.configMapRef.key');
+      guid = await this._getConfig(cmName, cmKey, cmNamespace);
+    }
+    if (regionRef) {
+      let cmName = objectPath.get(regionRef, 'valueFrom.configMapRef.name');
+      let cmNamespace = objectPath.get(regionRef, 'valueFrom.configMapRef.namespace', this.namespace);
+      let cmKey = objectPath.get(regionRef, 'valueFrom.configMapRef.key');
+      region = await this._getConfig(cmName, cmKey, cmNamespace);
+    }
     const client = AppConfiguration.getInstance();
     client.init(region, guid, apikey);
     client.setContext(collectionId, environmentId);
     if (attributesPairs) {
-      attributesPairs.forEach(attr => attributes[attr.name] = attr.value);
+      for (const attrPair of attributesPairs) {
+         if (attrPair.valueFrom) {
+	   // value is referenced from some configmap 
+	   let cmName = objectPath.get(attrPair.valueFrom, 'configMapRef.name');
+	   let cmNamespace = objectPath.get(attrPair.valueFrom, 'configMapRef.namespace', this.namespace);
+	   let cmKey = objectPath.get(attrPair.valueFrom, 'configMapRef.key');
+	   let value = await this._getConfig(cmName, cmKey, cmNamespace);
+           attributes[attrPair.name] = value;
+         } else {
+           attributes[attrPair.name] = attrPair.value;
+         }
+      }
     }
     let featuresList = {};
     let propertiesList = {};
@@ -66,17 +113,17 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
       data: {}
     };
     const sleep = (waitTimeInMs) => new Promise(resolve => setTimeout(resolve, waitTimeInMs));
-    sleep(5000).then(() => {
+    sleep(10000).then(() => {
        features = client.getFeatures();
        properties = client.getProperties();
        
        featuresList = Object.keys(features);
        propertiesList = Object.keys(properties);
        featuresList.forEach((feature) => {
-	   featureMap[flagPrefix + feature] = features[feature].getCurrentValue(identityId, attributes);
+	   featureMap[flagPrefix + feature] = features[feature].getCurrentValue(entityId, attributes);
        });
        propertiesList.forEach((property) => {
-           propertyMap[propPrefix + property] = properties[property].getCurrentValue(identityId, attributes);
+           propertyMap[propPrefix + property] = properties[property].getCurrentValue(entityId, attributes);
        });
        configurationsMap = {...featureMap, ...propertyMap};
        patchObject.data = configurationsMap;
@@ -102,16 +149,26 @@ module.exports = class IBMCloudAppConfigController extends BaseController {
              configurationsToDelete.forEach(config => configurationsMap[config] = null);
            }
            Object.keys(newFeatures).forEach((f) => {
-             configurationsMap[flagPrefix + f] = newFeatures[f].getCurrentValue(identityId, attributes);
+             configurationsMap[flagPrefix + f] = newFeatures[f].getCurrentValue(entityId, attributes);
            });
            Object.keys(newProperties).forEach((p) => {
-             configurationsMap[propPrefix + p] = newProperties[p].getCurrentValue(identityId, attributes);
+             configurationsMap[propPrefix + p] = newProperties[p].getCurrentValue(entityId, attributes);
            });
            patchObject.data = configurationsMap;
 	   this.patchSelf(patchObject)
 	       .then(res => objectPath.set(this.data, 'object', res) );
         });
     }
+  }
+
+  async _getConfig(name, key, ns) {
+    if (!name || !key) {
+      return;
+    }
+    let res = await this.kubeResourceMeta.request({ uri: `/api/v1/namespaces/${ns || this.namespace}/configmaps/${name}`, json: true });
+    // let cm = Buffer.from(objectPath.get(res, ['data', key], ''), 'base64').toString();
+    let cm = objectPath.get(res, ['data', key], '');
+    return cm;
   }
 
   async _getSecretData(name, key, ns) {
